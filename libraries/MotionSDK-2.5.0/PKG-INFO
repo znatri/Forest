@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: MotionSDK
+Version: 2.5.0
+Summary: Motion Software Development Kit (SDK)
+Home-page: https://github.com/motion-workshop/sdk
+Author: Motion Workshop
+Author-email: info@motionshadow.com
+License: BSD
+Description: Provides real-time access to the outputs of the Motion Service. This includes 3d rotation output as well as the raw and calibrated accelerometer, gyroscope, and magnetometer sensor signals. Supports both Shadow and MotionNode inertial sensing systems.
+Platform: any

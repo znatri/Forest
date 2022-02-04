@@ -1,0 +1,6 @@
+MotionSDK.py
+setup.py
+MotionSDK.egg-info/PKG-INFO
+MotionSDK.egg-info/SOURCES.txt
+MotionSDK.egg-info/dependency_links.txt
+MotionSDK.egg-info/top_level.txt
