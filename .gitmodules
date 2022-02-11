@@ -1,0 +1,3 @@
+[submodule "mocap/xsens_dot_server"]
+	path = mocap/xsens_dot_server
+	url = git@github.com:xsens/xsens_dot_server.git
