@@ -5,11 +5,7 @@
 
 import os
 import sys
-import time
 import csv
-import pdb
-from queue import Queue
-from threading import Thread
 import time
 import socket
 
@@ -77,7 +73,7 @@ if __name__ == "__main__":
     PORT = 5004
 
     sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
-    from xarm.wrapper import XArmAPI
+    from libraries.xarm.wrapper import XArmAPI
 
     arm1 = XArmAPI('192.168.1.236')
     arm2 = XArmAPI('192.168.1.203')

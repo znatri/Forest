@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-import csv
 import socket
 import queue
 import numpy as np
@@ -134,15 +133,15 @@ if __name__ == "__main__":
     ROBOT = "xArms"
     PORT = 5004
 
-    a1 = queue()
-    a2 = queue()
-    a3 = queue()
-    a4 = queue()
+    a1 = queue.Queue()
+    a2 = queue.Queue()
+    a3 = queue.Queue()
+    a4 = queue.Queue()
 
     quay = [a1, a2, a3, a4]
 
     sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
-    from xarm.wrapper import XArmAPI
+    from libraries.xarm.wrapper import XArmAPI
 
     arm1 = XArmAPI('192.168.1.236')
     arm2 = XArmAPI('192.168.1.203')

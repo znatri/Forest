@@ -1,14 +1,10 @@
 # Individually Run Two Arms wit Live Trajectory
 
-import os
-import sys
 import time
-import csv
-import socket
 import queue
 import numpy as np
 from threading import Thread
-from xarm.wrapper import XArmAPI
+from libraries.xarm.wrapper import XArmAPI
 
 
 def setup():

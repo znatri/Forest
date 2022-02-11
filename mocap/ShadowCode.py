@@ -29,18 +29,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-import sys
 import MotionSDK
 from xml.etree.ElementTree import XML
 import time
-from xarm.wrapper import XArmAPI
-from playsound import playsound
-import os
-import csv
+from libraries.xarm.wrapper import XArmAPI
 import sys
-from queue import Queue
-from threading import Thread
-import random
 
 PortConsole = 32075
 PortConfigurable = 32076
@@ -210,7 +203,7 @@ def test_Client(host):
 
 
         mapangle = rotation[0] - offset
-        mapangle2 = rotation[1] -offset2
+        mapangle2 = rotation[1] - offset2
         mapangle3 = rotation2[1] - offset3
         # if abs(mapangle-lastpoint) > 0.001:
         #     mapangle = lastpoint+0.001
@@ -227,40 +220,6 @@ def test_Client(host):
 
         num_frames += 1
 
-
-
-
-
-def test_LuaConsole(host):
-    client = MotionSDK.Client(host, PortConsole)
-
-    print("Connected to %s:%d" % (host, port))
-
-    #
-    # General Lua scripting interface.
-    #
-    lua_chunk = \
-      "if not node.is_reading() then" \
-      "   node.close()" \
-      "   node.scan()" \
-      "   node.start()" \
-      " end" \
-      " if node.is_reading() then" \
-      "   print('Reading from ' .. node.num_reading() .. ' device(s)')" \
-      " else" \
-      "   print('Failed to start reading')" \
-      " end"
-
-    print(LuaConsole.SendChunk(client, lua_chunk, 5))
-
-    # Scripting language compatibility class. Translate Python calls into Lua
-    # calls and send them to the console service.
-    node = LuaConsole.Node(client)
-    print("node.is_reading() = {}".format(node.is_reading()))
-
-
-
-
 def main(argv):
     # Set the default host name parameter. The SDK is socket based so any
     # networked Motion Service is available.
@@ -272,7 +231,7 @@ def main(argv):
     test_Client(host)
 
     # Requires a data file. Do not test by default.
-    #test_File()
+    # test_File()
 
 if __name__ == "__main__":
 

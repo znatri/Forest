@@ -2,7 +2,6 @@ from rtpmidi import RtpMidi
 from pymidi import server
 import os
 import sys
-import time
 from queue import Queue
 from threading import Thread
 import time
@@ -23,8 +22,7 @@ def setup():
         a.clean_error()
         a.set_mode(0)
         a.set_state(0)
-        a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5,
-                          is_radian=False)
+        a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5, is_radian=False)
 
 
 class MyHandler(server.Handler):
@@ -286,7 +284,7 @@ if __name__ == "__main__":
     PORT = 5004
 
     sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
-    from xarm.wrapper import XArmAPI
+    from libraries.xarm.wrapper import XArmAPI
 
     arm1 = XArmAPI('192.168.1.208')
     arm2 = XArmAPI('192.168.1.244')
