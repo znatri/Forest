@@ -10,7 +10,6 @@ import time
 import struct
 from .utils import xarm_is_connected, xarm_is_pause, check_modbus_baud, xarm_is_not_simulation_mode
 from ..core.config.x_config import XCONF
-from ..core.utils.log import logger
 from ..core.utils import convert
 from .code import APIState
 from .gpio import GPIO
