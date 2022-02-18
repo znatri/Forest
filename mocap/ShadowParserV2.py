@@ -204,12 +204,14 @@ def data_handler(que, weights):
             offset1 = rotation[1]
 
         mapangle0 = np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-50, 50])
-        mapangle1 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-10, 10])
+        mapangle1 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-30, 30])
 
         if counter > 1000:
             pos_list = []
             for i in range(0, 9):
+                # Joint-3 and Joint-6
                 # pos = [0.0, 0.0, mapangle1 * weights[i], 90, 0.0,  mapangle0 * weights[i], 0.0]
+                # Joint-5 and Joint-6
                 pos = [0.0, 0.0, 0, 90, mapangle1 * weights[i],  mapangle0 * weights[i], 0.0]
                 pos_list.append(pos)
             que.put(pos_list)
