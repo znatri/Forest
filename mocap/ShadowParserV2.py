@@ -5,7 +5,6 @@
 ####################################################################
 
 from xml.etree.ElementTree import XML
-import time
 import sys
 from threading import Thread
 import queue
@@ -159,7 +158,6 @@ def data_handler(que, weights):
 
         if data is None:
             raise RuntimeError("data stream interrupted or timed out")
-            break
 
         if data.startswith(b"<?xml"):
             xml_node_list = data
@@ -199,14 +197,14 @@ def data_handler(que, weights):
         for i in range(4,7):
             position.append((item.value(i)))
 
-        if counter == 0:
+        if counter <= 500:
             offset0 = rotation[0]
             offset1 = rotation[1]
 
         mapangle0 = np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-50, 50])
         mapangle1 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-30, 30])
 
-        if counter > 1000:
+        if counter > 500:
             pos_list = []
             for i in range(0, 9):
                 # Joint-3 and Joint-6
