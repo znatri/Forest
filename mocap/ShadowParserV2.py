@@ -12,33 +12,55 @@ import queue
 import numpy as np
 import MotionSDK
 import math
+import random
 
 host = ""
 PortConfigurable = 32076
 frames = 0
 
+# Sets xarms to positions in the queue
 def playRobot(que, arms):
     while True:
-        pos = que.get()
-        arms[0].set_servo_angle_j(angles=pos, is_radian=False)
+        pos_list = que.get()
+        for i in range(0, 9):
+            arms[i].set_servo_angle_j(angles=pos_list[i], is_radian=False)
 
-def bfs(graph, source, goal):
+# BFS Helper algorithm to calculate neighbour distances
+def bfs(graph, start):
+    discovery = {
+        1: -1,
+        2: -1,
+        3: -1,
+        4: -1,
+        5: -1,
+        6: -1,
+        7: -1,
+        8: -1,
+        9: -1
+    }
+
     Q = queue.Queue()
-    visited_vertices = set()
-    Q.put(source)
-    visited_vertices.update({0})
-    while not Q.empty():
-        vertex = Q.get()
-        print(vertex, end="-->")
-        for u in graph[vertex]:
-            if u not in visited_vertices:
-                Q.put(u)
-                visited_vertices.update({u})
+    visited = set()
 
-def distanceWeights(num):
-    # returns dictionary of weights to use for each arm
-    graph = {
-        1: [1, 4, 5],
+    Q.put(start)
+    visited.add(start)
+
+    while not Q.empty():
+        v = Q.get()
+        for u in graph[v]:
+            if u not in visited:
+                Q.put(u)
+                discovery[u] = v
+                visited.add(u)
+
+    return discovery
+
+# Calculates weights for each arm given the distance from chosen
+def distanceWeights(arm):
+    weights = {}
+
+    neighbor_graph = {
+        1: [2, 4, 5],
         2: [1, 3, 4, 5, 6],
         3: [2, 5, 6],
         4: [1, 2, 5, 7, 8],
@@ -49,20 +71,23 @@ def distanceWeights(num):
         9: [5, 6, 8]
     }
 
+    discovery = bfs(neighbor_graph, arm)
 
+    for i in discovery.keys():
+        distance = -1
+        j = i
+        while j != -1:
+            j = discovery.get(j)
+            distance += 1
 
-    retVal = {
-        1: [1, 0, 0, 0, 0, 0, 0, 0, 0],
-        2: [0, 1, 0, 0, 0, 0, 0, 0, 0],
-        3: [0, 0, 1, 0, 0, 0, 0, 0, 0],
-        4: [0, 0, 0, 1, 0, 0, 0, 0, 0],
-        5: [0, 0, 0, 0, 1, 0, 0, 0, 0],
-        6: [0, 0, 0, 0, 0, 1, 0, 0, 0],
-        7: [0, 0, 0, 0, 0, 0, 1, 0, 0],
-        8: [0, 0, 0, 0, 0, 0, 0, 1, 0],
-        9: [0, 0, 0, 0, 0, 0, 0, 0, 1]
-    }
-    return retVal.get(num)
+        weight = np.interp(distance, [0, 2], [1, 0.1])
+
+        w1 = int(100*(weight - 0.2))
+        w2 = int(100*(weight + 0.2))
+
+        weights[i] = abs(random.randint(w1, w2)/100)
+
+    return weights
 
 def setup():
     for a in arms:
@@ -90,7 +115,7 @@ def testClient():
     client = MotionSDK.Client(host, PortConfigurable)
     print("Connected to %s:%d" % (host, PortConfigurable))
 
-def data_handler(que, weigths):
+def data_handler(que, weights):
     client = MotionSDK.Client(host, PortConfigurable)
     print("Connected to %s:%d" % (host, PortConfigurable))
 
@@ -111,6 +136,8 @@ def data_handler(que, weigths):
     head_key = None
 
     counter = 0
+
+    weights = weights.values()
 
     while True:
         data = client.readData()
@@ -165,10 +192,13 @@ def data_handler(que, weigths):
         mapangle1 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-10, 10])
 
         if counter > 1000:
-            pos = [0.0, 0.0, mapangle1, 90, 0.0, mapangle0, 0.0]
-            que.put(pos)
-            # arm.set_servo_angle_j(angles=pos, is_radian=False)
-            # que.put(pos)
+            pos_list = []
+            for i in range(0, 9):
+                mapangle0 *= weights[i]
+                mapangle1 *= weights[i]
+                pos = [0.0, 0.0, mapangle1, 90, 0.0, mapangle0, 0.0]
+                pos_list.append(pos)
+            que.put(pos_list)
 
         counter += 1
         num_frames += 1
