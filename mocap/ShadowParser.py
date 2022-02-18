@@ -1,4 +1,9 @@
-import socket
+##################################################################
+#   Motion Capture Suit V1                                       #
+#   Reads Motion Shadow Data and maps to head's X and Y rotation #
+#   Moves one preselected arm                                    #
+##################################################################
+
 from xml.etree.ElementTree import XML
 import time
 import sys
