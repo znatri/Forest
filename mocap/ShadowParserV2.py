@@ -22,6 +22,7 @@ frames = 0
 def playRobot(que, arms):
     while True:
         pos_list = que.get()
+        # print(pos_list)
         for i in range(0, 9):
             arms[i].set_servo_angle_j(angles=pos_list[i], is_radian=False)
 
@@ -59,16 +60,28 @@ def bfs(graph, start):
 def distanceWeights(arm):
     weights = {}
 
+    # neighbor_graph = {
+    #     1: [2, 4, 5],
+    #     2: [1, 3, 4, 5, 6],
+    #     3: [2, 5, 6],
+    #     4: [1, 2, 5, 7, 8],
+    #     5: [1, 2, 3, 4, 6, 7, 8, 9],
+    #     6: [2, 3, 5, 8, 9],
+    #     7: [4, 5, 8],
+    #     8: [4, 5, 6, 7, 9],
+    #     9: [5, 6, 8]
+    # }
+
     neighbor_graph = {
-        1: [2, 4, 5],
-        2: [1, 3, 4, 5, 6],
-        3: [2, 5, 6],
-        4: [1, 2, 5, 7, 8],
-        5: [1, 2, 3, 4, 6, 7, 8, 9],
-        6: [2, 3, 5, 8, 9],
-        7: [4, 5, 8],
-        8: [4, 5, 6, 7, 9],
-        9: [5, 6, 8]
+        1: [2, 4],
+        2: [1, 3, 5],
+        3: [2, 6],
+        4: [1, 5, 7],
+        5: [2, 4, 6, 8],
+        6: [3, 5, 9],
+        7: [4, 8],
+        8: [5, 7, 9],
+        9: [6, 8]
     }
 
     discovery = bfs(neighbor_graph, arm)
@@ -80,7 +93,7 @@ def distanceWeights(arm):
             j = discovery.get(j)
             distance += 1
 
-        weight = np.interp(distance, [0, 2], [1, 0.1])
+        weight = np.interp(distance, [0, 2], [1, 0.25])
 
         w1 = int(100*(weight - 0.2))
         w2 = int(100*(weight + 0.2))
@@ -92,7 +105,7 @@ def distanceWeights(arm):
 def setup():
     for a in arms:
         a.set_simulation_robot(on_off=False)
-        # a.motion_enable(enable=True)
+        a.motion_enable(enable=True)
         a.clean_warn()
         a.clean_error()
         a.set_mode(0)
@@ -137,7 +150,9 @@ def data_handler(que, weights):
 
     counter = 0
 
-    weights = weights.values()
+    print(weights)
+    weights = list(weights.values())
+    print(weights)
 
     while True:
         data = client.readData()
@@ -194,9 +209,8 @@ def data_handler(que, weights):
         if counter > 1000:
             pos_list = []
             for i in range(0, 9):
-                mapangle0 *= weights[i]
-                mapangle1 *= weights[i]
-                pos = [0.0, 0.0, mapangle1, 90, 0.0, mapangle0, 0.0]
+                # pos = [0.0, 0.0, mapangle1 * weights[i], 90, 0.0,  mapangle0 * weights[i], 0.0]
+                pos = [0.0, 0.0, 0, 90, mapangle1 * weights[i],  mapangle0 * weights[i], 0.0]
                 pos_list.append(pos)
             que.put(pos_list)
 
@@ -251,6 +265,8 @@ if __name__ == "__main__":
     t_read = Thread(target=data_handler, args=(que, weights,))
     t_play = Thread(target=playRobot, args=(que, arms,))
 
+    t_read.start()
+    t_play.start()
 
 
 
