@@ -34,16 +34,28 @@ def bfs(graph, start):
 def distanceWeights(arm):
     weights = {}
 
+    # neighbor_graph = {
+    #     1: [2, 4, 5],
+    #     2: [1, 3, 4, 5, 6],
+    #     3: [2, 5, 6],
+    #     4: [1, 2, 5, 7, 8],
+    #     5: [1, 2, 3, 4, 6, 7, 8, 9],
+    #     6: [2, 3, 5, 8, 9],
+    #     7: [4, 5, 8],
+    #     8: [4, 5, 6, 7, 9],
+    #     9: [5, 6, 8]
+    # }
+
     neighbor_graph = {
-        1: [2, 4, 5],
-        2: [1, 3, 4, 5, 6],
-        3: [2, 5, 6],
-        4: [1, 2, 5, 7, 8],
-        5: [1, 2, 3, 4, 6, 7, 8, 9],
-        6: [2, 3, 5, 8, 9],
-        7: [4, 5, 8],
-        8: [4, 5, 6, 7, 9],
-        9: [5, 6, 8]
+        1: [2, 4],
+        2: [1, 3, 5],
+        3: [2, 6],
+        4: [1, 5, 7],
+        5: [2, 4, 6, 8],
+        6: [3, 5, 9],
+        7: [4, 8],
+        8: [5, 7, 9],
+        9: [6, 8]
     }
 
     discovery = bfs(neighbor_graph, arm)
@@ -55,7 +67,7 @@ def distanceWeights(arm):
             j = discovery.get(j)
             distance += 1
 
-        weight = np.interp(distance, [0, 2], [1, 0.1])
+        weight = np.interp(distance, [0, 2], [1, 0.5])
 
         w1 = int(100*(weight - 0.2))
         w2 = int(100*(weight + 0.2))
@@ -65,4 +77,4 @@ def distanceWeights(arm):
     return weights
 
 for x in range(0, 9):
-    print(x)
+    print(distanceWeights(x+1))
