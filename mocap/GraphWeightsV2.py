@@ -17,11 +17,6 @@ def distanceWeights(originbot, otherbots):
 
     return weights
 
-def findAngles(origin, newpoint):
-    angleRad = math.atan2(newpoint[1] - origin[1], newpoint[0] - origin[0])
-    angleDeg = 180 * angleRad/ math.pi
-    return angleDeg
-
 def findDistance(origin, newpoint):
     distance = ((((newpoint[0] - origin[0]) ** 2) + ((newpoint[1] - origin[1]) ** 2)) ** 0.5)
     return distance
