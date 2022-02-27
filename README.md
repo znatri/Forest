@@ -1,7 +1,7 @@
-# Robotic Muscianship at Georgia Tech
+# Robotic Musicianship at Georgia Tech
 
 ## About
-This is a repository for Motion Capture and Music MIDI Generation which is part of Georgia Tech Center for Music Technology's 'Forest' project.
+This is a repository for Motion Capture and Music MIDI Generation which is part of Georgia Tech Center for Music Technology's **Forest** project.
 
 ## Gallery
 
