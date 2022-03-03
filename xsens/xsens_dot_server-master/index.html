@@ -1,0 +1,113 @@
+<!--
+  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+  All rights reserved.
+  
+  Redistribution and use in source and binary forms, with or without modification,
+  are permitted provided that the following conditions are met:
+  
+  1.      Redistributions of source code must retain the above copyright notice,
+           this list of conditions, and the following disclaimer.
+  
+  2.      Redistributions in binary form must reproduce the above copyright notice,
+           this list of conditions, and the following disclaimer in the documentation
+           and/or other materials provided with the distribution.
+  
+  3.      Neither the names of the copyright holders nor the names of their contributors
+           may be used to endorse or promote products derived from this software without
+           specific prior written permission.
+  
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+  THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
+  OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY OR
+  TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.THE LAWS OF THE NETHERLANDS 
+  SHALL BE EXCLUSIVELY APPLICABLE AND ANY DISPUTES SHALL BE FINALLY SETTLED UNDER THE RULES 
+  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE 
+  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.  
+-->
+
+<!doctype html>
+<html>
+	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Xsens DOT with Node.js</title>
+        <link rel="stylesheet" type="text/css" href="styleSheet.css" media="all">
+        <script src="socket.io/socket.io.js"></script>
+        <script src="communication.js"></script>
+
+        <style>th:not(:last-child), td:not(:last-child) { border-right: 2px solid #000; }</style>
+	</head>
+
+  <body>
+
+    <img src="Xsens_DOT_Logo.png" width="500px" class="centerImg" style="padding-top: 2em;" />
+    <hr>
+
+    <div width="500px" align="center">
+      <div id="measurementMode" style="color: white; margin-top: 2px; width: 500px; text-align: left; font-weight: bold;" hidden>Measurement Mode: Complete (Euler)</div>
+      <div id="headingResetTip" style="color: white; margin-top: 2px; width: 500px; text-align: left;" hidden>Heading reset/revert setting is only available for orientation data.</div>
+
+      <div class="wrapper" style="padding-top: 12px; padding-bottom: 12px;">
+        <div style="position: relative;">
+          <button id="scanControlButton" class="actionButton" style="position: absolute; left: 0px; margin-top: -18px;" onclick="scanControlButtonClicked()">Start Scanning</button>
+        </div>
+
+        <div style="position: relative;">
+          <div style="position: absolute; left: 0px; right: 0px; margin-top: -18px;">
+            <button id="headingResetButton" class="actionButton" hidden onclick="headingResetButtonClicked()">Heading Reset</button>
+
+            <div class="dropdown">
+              <button id="measurementControlButton" class="dropbtn actionButton" hidden>Start Logging</button>
+              <div id="measurementPayloadList" class="dropdown-content">
+                <a id= "16" onclick="measurementControlButtonClicked(this.id)">Complete (Euler)</a>
+                <a id= "2" onclick="measurementControlButtonClicked(this.id)">Extended (Quaternion)</a>
+                <a id= "20" onclick="measurementControlButtonClicked(this.id)">Rate quantities (with mag)</a>
+                <a id= "22" onclick="measurementControlButtonClicked(this.id)">Custom mode 1</a>
+                <a id= "23" onclick="measurementControlButtonClicked(this.id)">Custom mode 2</a>
+                <a id= "24" onclick="measurementControlButtonClicked(this.id)">Custom mode 3</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="position: relative;">
+          <button id="syncControlButton" class="actionButton" hidden style="position: absolute; right: 0px; margin-top: -18px; margin-right: -4px;" onclick="syncControlButtonClicked()">Disable Sync</button>
+
+          <button id="stopMeasuringButton" class="actionButton" style="position: absolute; right: 0px; margin-top: -18px; margin-right: -4px;" onclick="stopMeasuringButtonClicked()" hidden>Stop Measuring</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div width="500px" min-height="200px" valign="top" align="center">
+      <p id="DiscoveredSensors" style="font-size:14px; min-height:200px;"><p>
+    </div>
+    <hr>
+
+    <div width="500px" class="centerImg roundBackground">
+      <div style="margin-bottom: 5em;">
+        <div style="display: flex; position: relative;">
+
+          <div style="flex: 1;">
+ 	    	    <h4 style="color: white; margin-top: 2px;">Logging Files:</h4>
+ 	    	    <p id="recordings" valign="center" style="font-size:12px;"><p>
+          </div>
+
+	    	  <button id="deleteFilesButton" style="position: absolute; right: 0px; bottom: 0px; margin-bottom: 1em;" class="actionButton" onClick="deleteFilesButtonClick()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal">
+      <div class="modal-content" align="center">
+        <p style="font-weight: bold;">Syncing..., please do not refresh this page.</p>
+      </div>
+    </div>
+
+	</body>
+</html>

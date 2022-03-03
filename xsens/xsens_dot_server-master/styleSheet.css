@@ -1,0 +1,193 @@
+@font-face 
+{
+    font-family: 'Montserrat';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Montserrat Regular'), local('Montserrat-Regular'),
+    url('/montserrat-v14-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+    url('/montserrat-v14-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+body 
+{
+    font: 14px 'Montserrat';
+    background-color: #43425D;
+}
+
+body, html
+{
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin: 10;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    touch-action: none;
+}
+
+.actionButton 
+{
+    width: 140px;
+    height: 36px;
+    outline: none;
+    border: 2px solid #43425D;
+    border-radius: 4px;
+    opacity: 1;
+    text-align: center;
+    font: 12px 'Montserrat';
+    letter-spacing: 0;
+    color: #EA6852;
+    font-weight: bold;
+    opacity: 1;
+}
+
+.actionButton:hover 
+{
+    background: #EA6852 0% 0% no-repeat padding-box;
+    border-radius: 4px;
+    opacity: 1;
+    color: #ffffff;
+}
+
+.actionButton:disabled
+{
+    border: 2px solid #43425D;
+    color: #43425D;
+    opacity: 0.2;
+}
+
+.centerImg
+{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    width: 50%;
+}
+
+.dropbtn
+{
+    cursor: pointer;
+    width: 140px;
+    height: 36px;
+    outline: none;
+    border: 2px solid #43425D;
+    border-radius: 4px;
+    opacity: 1;
+    text-align: center;
+    font: 12px 'Montserrat';
+    letter-spacing: 0;
+    color: #EA6852;
+    font-weight: bold;
+    opacity: 1;
+}
+
+.dropdown
+{
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content
+{
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 220px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+.dropdown-content a
+{
+    color: #EA6852;
+    padding: 10px 6px;
+    font: 12px 'Montserrat';
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover
+{
+    background-color: #EA6852;
+    color: #ffffff;
+}
+
+.dropdown:hover .dropdown-content
+{
+    display: block;
+}
+
+.dropdown:hover .dropbtn
+{
+    background-color: #EA6852 0% 0% no-repeat padding-box;
+    border-radius: 4px;
+    opacity: 1;
+}
+
+.roundBackground
+{
+    width: 500px;
+    height: auto;
+    background-color: #43425D;
+    border: 2px solid #43425D;
+    padding: 8px 8px;
+    border-radius: 12px;
+    -moz-border-radius: 12px;
+}
+
+.wrapper
+{
+    width: 500px;
+}
+
+.wrapper > div
+{
+    display: inline-block;
+    width: calc(100% / 3.09);
+    width: -webkit-calc(100% /3.09);
+    width: -moz-calc(100% / 3.09);
+    height: 100%;
+}
+
+.modal
+{
+    display: none;
+    position: fixed;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #EA6852;
+    color: white;
+    padding: 20px;
+    margin: auto;
+    margin-top: 16%;
+    width: 36%;
+    -webkit-animation-name: animatetop;
+    -webkit-animation-duration: 0.4s;
+    animation-name: animatetop;
+    animation-duration: 0.4s
+}
+
+@-webkit-keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+@keyframes animatetop {
+    from {top:-300px; opacity:0}
+    to {top:0; opacity:1}
+}
