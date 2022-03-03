@@ -17,6 +17,7 @@ host = ""
 PortConfigurable = 32076
 frames = 0
 
+
 # Sets xarms to positions in the queue
 def playRobot(arm, que, j3, weight):
     while True:
@@ -24,6 +25,7 @@ def playRobot(arm, que, j3, weight):
         j5 = data.get("j5") * weight
         j6 = data.get("j6") * weight
         arm.set_servo_angle_j(angles=[0.0, 0.0, j3, 90, j5, j6, 0.0], is_radian=False)
+
 
 def findPositionAngle(pos, graph):
     lst = []
@@ -33,20 +35,27 @@ def findPositionAngle(pos, graph):
         # print(f"arm: {i+1}, coordinate {graph[i]}, relative angle: {angle}")
     return lst
 
-def distanceWeights(originbot, otherbots):
-    weights = {}
 
-    for i in range(len(otherbots)):
-        distance = findDistance(originbot, otherbots[i])
+def findWeights(originbot, otherbots):
+    randomizedWeights = []
 
-        weight = np.interp(distance, [0, 2], [1, 0.25])
+    distances = findDistances(originbot, otherbots)
 
-        w1 = int(100 * (weight - 0.2))
-        w2 = int(100 * (weight + 0.2))
+    max = np.max(distances)
+    min = np.min(distances)
 
-        weights[i+1] = abs(random.randint(w1, w2) / 100)
+    print(f"Max: {max}, Min: {min}")
 
-    return weights
+    weights = np.interp(distances, [min, max], [1, 0.25])
+
+    for i in weights:
+        w1 = int(100 * (i - 0.2))
+        w2 = int(100 * (i + 0.2))
+
+        randomizedWeights.append(abs(random.randint(w1, w2) / 100))
+
+    return randomizedWeights
+
 
 def setup():
     for a in arms:
@@ -58,6 +67,7 @@ def setup():
         a.set_state(0)
         a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5,
                           is_radian=False)
+
 
 def parse_name_map(xml_node_list):
     name_map = {}
@@ -71,7 +81,8 @@ def parse_name_map(xml_node_list):
 
     return name_map
 
-def data_handler(que,):
+
+def data_handler(que, ):
     client = MotionSDK.Client(host, PortConfigurable)
     print("Connected to %s:%d" % (host, PortConfigurable))
 
@@ -153,9 +164,18 @@ def data_handler(que,):
         counter += 1
         num_frames += 1
 
+
 def findDistance(origin, newpoint):
     distance = ((((newpoint[0] - origin[0]) ** 2) + ((newpoint[1] - origin[1]) ** 2)) ** 0.5)
     return distance
+
+
+def findDistances(pos, nodes):
+    deltas = nodes - pos
+    dist_2 = np.einsum('ij,ij->i', deltas, deltas)
+    distances = np.sqrt(dist_2)
+    return distances
+
 
 def findAngle(pos, arm_pos):
     (x, y) = pos
@@ -166,7 +186,7 @@ def findAngle(pos, arm_pos):
 
     opposite = findDistance((x, y), (a, y))
     hypotenuse = findDistance((x, y), (a, b))
-    angleRad = math.asin(opposite/hypotenuse)
+    angleRad = math.asin(opposite / hypotenuse)
     angle = 180 * angleRad / math.pi
 
     if x <= a:
@@ -182,11 +202,13 @@ def findAngle(pos, arm_pos):
 
     return angle
 
+
 def closest_arm(pos, nodes):
     # nodes = np.asarray(nodes)
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
     return np.argmin(dist_2)
+
 
 if __name__ == "__main__":
     ###############
@@ -248,7 +270,7 @@ if __name__ == "__main__":
 
     # Store weights for each arms in a sequential order, 1 ... 9
     leader = graph[num]
-    weights = list(distanceWeights(leader, graph).values())
+    weights = findWeights(leader, graph)
 
     # Values for joint 3 from current position
     j3_values = findPositionAngle(pos, graph)
@@ -275,6 +297,3 @@ if __name__ == "__main__":
 
     for i in range(len(graph)):
         t_arms[i].start()
-
-
-
