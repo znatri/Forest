@@ -182,6 +182,11 @@ def findAngle(pos, arm_pos):
 
     return angle
 
+def closest_arm(pos, nodes):
+    # nodes = np.asarray(nodes)
+    deltas = nodes - pos
+    dist_2 = np.einsum('ij,ij->i', deltas, deltas)
+    return np.argmin(dist_2)
 
 if __name__ == "__main__":
     ###############
@@ -235,14 +240,14 @@ if __name__ == "__main__":
     pos = [x, y]
 
     # Calculate the closest arm's position using dancer position
-    num = 0
+    num = closest_arm(pos, graph)
 
     ################################
     # Setup xArm and MoCap Threads #
     ###############################
 
     # Store weights for each arms in a sequential order, 1 ... 9
-    leader = graph[num - 1]
+    leader = graph[num]
     weights = list(distanceWeights(leader, graph).values())
 
     # Values for joint 3 from current position
