@@ -12,7 +12,7 @@ PortConfigurable = 32076
 frames = 0
 
 def playRobot(mapangle, arm, weight):
-    tf = 50
+    tf = 30
     t_step = 0.006
     t_array = np.arange(0, tf, t_step)
 
@@ -22,26 +22,28 @@ def playRobot(mapangle, arm, weight):
 
     while True:
         data = mapangle.get()
-        j5 = data.get("j5") * weight
-        j6 = data.get("j6") * weight
+        j5 = data.get("j5")
+        j6 = data.get("j6")
         goal = [0, 0, 0, 0, j5, j6, 0]
 
         q_i = p
         q_dot_i = np.zeros(7)
         q_dotdot_i = np.zeros(7)
         q_f = goal
-
+        # print(goal)
         j = 0
 
         while j < len(t_array):
             start_time = time.time()
 
-            if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
-                    p[3] - q_f[3]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0 and abs(
-                p[6] - q_f[6]) < 1.0:
+            if abs(p[0] - q_f[0]) < 2.0 and abs(p[1] - q_f[1]) < 2.0 and abs(p[2] - q_f[2]) < 2.0 and abs(
+                    p[3] - q_f[3]) < 2.0 and abs(p[4] - q_f[4]) < 2.0 and abs(p[5] - q_f[5]) < 2.0 and abs(
+                p[6] - q_f[6]) < 2.0:
+                mapangle.queue.clear()
                 break
 
             if j == len(t_array):
+                mapangle.queue.clear()
                 t = tf
             else:
                 t = t_array[j]
@@ -67,8 +69,8 @@ def playRobot(mapangle, arm, weight):
 
                 p[i] = (a0[i] + a1[i] * t + a2[i] * t ** 2 + a3[i] * t ** 3 + a4[i] * t ** 4 + a5[i] * t ** 5)
 
-            arm.set_servo_angle_j(angles=p, is_radian=False)
-            # print(f"{p} {arm}")
+            # arm.set_servo_angle_j(angles=p, is_radian=False)
+            print(f"{p} {arm}")
 
             tts = time.time() - start_time
             sleep = t_step - tts
@@ -78,6 +80,7 @@ def playRobot(mapangle, arm, weight):
 
             time.sleep(sleep)
             j += 1
+
 
 def findWeights(originbot, otherbots):
     randomizedWeights = []
@@ -242,7 +245,7 @@ if __name__ == "__main__":
 
     graph = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
 
-    closest_arm = 2
+    closest_arm = 1
     leader = graph[closest_arm]
     weights = findWeights(leader, graph)
 
