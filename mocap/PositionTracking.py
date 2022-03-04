@@ -1,41 +1,28 @@
-from xml.etree.ElementTree import XML
-import sys
 from threading import Thread
 import queue
 import numpy as np
-import MotionSDK
 import math
-import random
 import time
 
 def playRobot(que, arm):
-    # IP = arm.get_servo_angle()[1]
-    IP = [0, 0, 0, 90, 0, 0, 0]
     tf = 50
+    t_step = 0.006
+    t_array = np.arange(0, tf, t_step)
 
-    # t0 = 0
-    t = [0 for i in range(0, 7)]
-    q_i = [0 for i in range(0, 7)]
-    q_dot_i = [0 for i in range(0, 7)]
-    q_dot_f = [0 for i in range(0, 7)]
-    q_dotdot_i = [0 for i in range(0, 7)]
-    q_dotdot_f = [0 for i in range(0, 7)]
-    t_array = np.arange(0, tf, 0.006)
+    q_dot_f = np.zeros(7)
+    q_dotdot_f = np.zeros(7)
     p = [0, 0, 0, 90, 0, 0, 0]
-    v = [0 for i in range(0, 7)]
-    a = [0 for i in range(0, 7)]
-
-    # j_angles = [0, 0, 0, 90, 0, 0, 0]
 
     while True:
         q = que.get()
 
         goal = q
+
         q_i = p
-        # q_i = j_angles
-        q_dot_i = [0, 0, 0, 0, 0, 0, 0]
-        q_dotdot_i = [0, 0, 0, 0, 0, 0, 0]
+        q_dot_i = np.zeros(7)
+        q_dotdot_i = np.zeros(7)
         q_f = goal
+
         j = 0
 
         while j < len(t_array):
@@ -71,26 +58,18 @@ def playRobot(que, arm):
                         q_dotdot_f[i] - q_dotdot_i[i]) * tf ** 2.0))
 
                 p[i] = (a0[i] + a1[i] * t + a2[i] * t ** 2 + a3[i] * t ** 3 + a4[i] * t ** 4 + a5[i] * t ** 5)
-                v[i] = (a1[i] + 2 * a2[i] * t + 3 * a3[i] * t ** 2 + 4 * a4[i] * t ** 3 + 5 * a5[i] * t ** 4)
-                a[i] = (2 * a2[i] + 6 * a3[i] * t + 12 * a4[i] * t ** 2 + 20 * a5[i] * t ** 3)
 
-            # j_angles = p
-            # arm.set_servo_angle_j(angles=p, is_radian=False)
-            if arm == 1:
-                print(f"{p} {arm}")
+            arm.set_servo_angle_j(angles=p, is_radian=False)
+            # print(f"{p} {arm}")
 
             tts = time.time() - start_time
-            sleep = 0.006 - tts
+            sleep = t_step - tts
 
-            if tts > 0.006:
+            if tts > t_step:
                 sleep = 0
 
             time.sleep(sleep)
             j += 1
-            # if t == 1:
-            # print(t, p, v, a)
-
-        # print(f"\nFinished {arm}")
 
 def findAngle(pos, arm_pos):
     (x, y) = pos
@@ -138,7 +117,7 @@ def findPositionAngle(pos, graph):
 def setup():
     for a in arms:
         a.set_simulation_robot(on_off=False)
-        a.motion_enable(enable=True)
+        # a.motion_enable(enable=True)
         a.clean_warn()
         a.clean_error()
         a.set_mode(0)
@@ -147,33 +126,33 @@ def setup():
 
 if __name__ == "__main__":
 
-    # from libraries.xarm.wrapper import XArmAPI
-    #
-    # ROBOT = "xArms"
-    # PORT = 5004
-    #
-    # arm1 = XArmAPI('192.168.1.236')
-    # arm2 = XArmAPI('192.168.1.242')
-    # arm3 = XArmAPI('192.168.1.203')
-    # arm4 = XArmAPI('192.168.1.215')
-    # arm5 = XArmAPI('192.168.1.234')
-    # arm6 = XArmAPI('192.168.1.244')
-    # arm7 = XArmAPI('192.168.1.211')
-    # arm8 = XArmAPI('192.168.1.226')
-    # arm9 = XArmAPI('192.168.1.208')
-    #
-    # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-    arms = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    # totalArms = len(arms)
-    #
-    # setup()
-    #
-    # repeat = input("do we need to repeat? [y/n]")
-    # if repeat == 'y':
-    #     setup()
-    # for a in arms:
-    #     a.set_mode(1)
-    #     a.set_state(0)
+    from xarm.wrapper import XArmAPI
+
+    ROBOT = "xArms"
+    PORT = 5004
+
+    arm1 = XArmAPI('192.168.1.203')
+    arm2 = XArmAPI('192.168.1.242')
+    arm3 = XArmAPI('192.168.1.236')
+    arm4 = XArmAPI('192.168.1.244')
+    arm5 = XArmAPI('192.168.1.234')
+    arm6 = XArmAPI('192.168.1.215')
+    arm7 = XArmAPI('192.168.1.208')
+    arm8 = XArmAPI('192.168.1.226')
+    arm9 = XArmAPI('192.168.1.211')
+
+    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
+
+    totalArms = len(arms)
+
+    setup()
+
+    repeat = input("do we need to repeat? [y/n]")
+    if repeat == 'y':
+        setup()
+    for a in arms:
+        a.set_mode(1)
+        a.set_state(0)
 
     graph = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
 
@@ -187,6 +166,8 @@ if __name__ == "__main__":
     for i in range(len(graph)):
         t_arms.append(Thread(target=playRobot, args=(pos_que[i], arms[i],)))
 
+    deltas = []
+
     for i in range(len(graph)):
         t_arms[i].start()
 
@@ -197,7 +178,8 @@ if __name__ == "__main__":
         dancer_pos = [x, y]
         j6 = findPositionAngle(dancer_pos, graph)
         for i in range(len(graph)):
-            pos_que[i].put([0, 0, j6[i], 0, 0, 0, 0])
+            curr = arms[i].angles[2]
+            pos_que[i].put([0, 0, j6[i], 90, 0, 0, 0])
 
 
 
