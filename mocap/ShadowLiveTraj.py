@@ -19,6 +19,8 @@ def playRobot(mapangle, arm, weight):
     q_dot_f = np.zeros(7)
     q_dotdot_f = np.zeros(7)
     p = [0, 0, 0, 90, 0, 0, 0]
+    v = np.zeros(7)
+    a = np.zeros(7)
 
     while True:
         data = mapangle.get()
@@ -36,14 +38,26 @@ def playRobot(mapangle, arm, weight):
         while j < len(t_array):
             start_time = time.time()
 
+            if mapangle.empty() == False:
+                data = mapangle.get()
+                j5 = data.get("j5")
+                j6 = data.get("j6")
+                goal = [0, 0, 0, 0, j5, j6, 0]
+
+                q_i = p
+                q_dot_i = v
+                q_dotdot_i = 0
+                q_f = goal
+
+                j = 0
+                print("switch")
+
             if abs(p[0] - q_f[0]) < 2.0 and abs(p[1] - q_f[1]) < 2.0 and abs(p[2] - q_f[2]) < 2.0 and abs(
                     p[3] - q_f[3]) < 2.0 and abs(p[4] - q_f[4]) < 2.0 and abs(p[5] - q_f[5]) < 2.0 and abs(
                 p[6] - q_f[6]) < 2.0:
-                mapangle.queue.clear()
                 break
 
             if j == len(t_array):
-                mapangle.queue.clear()
                 t = tf
             else:
                 t = t_array[j]
@@ -68,6 +82,11 @@ def playRobot(mapangle, arm, weight):
                         q_dotdot_f[i] - q_dotdot_i[i]) * tf ** 2.0))
 
                 p[i] = (a0[i] + a1[i] * t + a2[i] * t ** 2 + a3[i] * t ** 3 + a4[i] * t ** 4 + a5[i] * t ** 5)
+
+                v[i] = a1[i] + 2 * a2[i] * t + 3 * a3[i] * t ** 2 + 4 * a4[i] * t ** 3 + 5 * a5[i] * t ** 4
+
+                a[i] = 2 * a2[i] + 6 * a3[i] * t + 12 * a4[i] * t ** 2 + 20 * a5[i] * t ** 3
+
 
             # arm.set_servo_angle_j(angles=p, is_radian=False)
             print(f"{p} {arm}")
