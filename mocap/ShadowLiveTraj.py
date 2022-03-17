@@ -24,7 +24,7 @@ def playRobot(mapangle, arm, weight):
         data = mapangle.get()
         j5 = data.get("j5")
         j6 = data.get("j6")
-        goal = [0, 0, 0, 0, j5, j6, 0]
+        goal = [0, 0, 0, 90, j5, j6, 0]
 
         q_i = p
         q_dot_i = np.zeros(7)
