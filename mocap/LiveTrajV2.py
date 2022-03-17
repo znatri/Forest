@@ -91,13 +91,35 @@ def playRobot(que, arm, mapangle):
             j += 1
             k += 1
 
+def setup(arm):
+    arm.set_simulation_robot(on_off=False)
+    arm.motion_enable(enable=True)
+    arm.clean_warn()
+    arm.clean_error()
+    arm.set_mode(0)
+    arm.set_state(0)
+    arm.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5, is_radian=False)
+
 if __name__ == "__main__":
-    arms = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    from libraries.xarm.wrapper import XArmAPI
+
+    ROBOT = "xArms"
+    PORT = 5004
+
+    arm = XArmAPI('192.168.1.242')
+
+    setup(arm)
+    repeat = input("do we need to repeat? [y/n]")
+    if repeat == 'y':
+        setup(arm)
+
+    arm.set_mode(1)
+    arm.set_state(0)
 
     pos_que = queue.Queue()
     mapanlge_que = queue.Queue()
 
-    t_arm = Thread(target=playRobot, args=(pos_que, arms[0], mapanlge_que))
+    t_arm = Thread(target=playRobot, args=(pos_que, arm, mapanlge_que))
     t_arm.start()
 
 
