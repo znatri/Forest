@@ -17,7 +17,6 @@ host = ""
 PortConfigurable = 32076
 frames = 0
 
-
 # Sets xarms to positions in the queue
 def playRobot(arm, que, j3, weight):
     while True:
@@ -29,7 +28,7 @@ def playRobot(arm, que, j3, weight):
 
 def findPositionAngle(pos, graph):
     lst = []
-    for i in range(9):
+    for i in range(len(graph)):
         angle = findAngle(pos, graph[i])
         lst.append(angle)
         # print(f"arm: {i+1}, coordinate {graph[i]}, relative angle: {angle}")
@@ -212,15 +211,6 @@ def closest_arm(pos, nodes):
 
 if __name__ == "__main__":
     ###############
-    # Setup Mocap #
-    ###############
-
-    # Set the default host name parameter. The SDK is socket based so any
-    # networked Motion Service is available.
-    if len(sys.argv) > 1:
-        host = sys.argv[1]
-
-    ###############
     # Setup xArms #
     ###############
     from libraries.xarm.wrapper import XArmAPI
@@ -285,7 +275,7 @@ if __name__ == "__main__":
     t_arms = []
 
     for i in range(len(graph)):
-        t_arms[i] = Thread(target=playRobot, args=(arms[i], que[i], j3_values[i], weights[i],))
+        t_arms.append(Thread(target=playRobot, args=(arms[i], que[i], j3_values[i], weights[i],)))
 
     ###########
     # Execute #
@@ -297,3 +287,4 @@ if __name__ == "__main__":
 
     for i in range(len(graph)):
         t_arms[i].start()
+
