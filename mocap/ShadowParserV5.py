@@ -13,22 +13,32 @@ PortConfigurable = 32076
 frames = 0
 
 
-def playRobot(arm, mapangle, joint_angle, weight):
-    tf = 50
+def playRobot(arm, map_angle : queue.Queue, joint_angle : queue.Queue, weight_que: queue.Queue):
+    tf_pos = 50
+    tf_shadow = 5
     t_step = 0.006
-    t_array = np.arange(0, tf, t_step)
+    t_array_pos = np.arange(0, tf_pos, t_step)
+    t_array_shadow = np.arange(0, tf_shadow, t_step)
 
     q_dot_f = np.zeros(7)
     q_dotdot_f = np.zeros(7)
     p = [0, 0, 0, 90, 0, 0, 0]
 
     while True:
-        data = mapangle.get()
-        j3 = joint_angle.get()
-        weight = weight.get()
+        data = map_angle.get()
+        if not weight_que.empty():
+            weight = weight_que.get()
+
+        if not joint_angle.empty():
+            j3 = joint_angle.get()
+        else:
+            j3 = p[2]
         j5 = data.get("j5") * weight
         j6 = data.get("j6") * weight
-        goal = np.array([0, 0, j3, 0, j5, j6, 0])
+        # j3 = 0
+        # j5 = data.get("j5")
+        # j6 = data.get("j6")
+        goal = [0, 0, j3, 90, j5, j6, 0]
 
         q_i = p
         q_dot_i = np.zeros(7)
@@ -36,19 +46,29 @@ def playRobot(arm, mapangle, joint_angle, weight):
         q_f = goal
 
         j = 0
+        k = 0
 
-        while j < len(t_array):
+        while j < len(t_array_pos) or k < len(t_array_shadow):
             start_time = time.time()
 
             if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
                     p[3] - q_f[3]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0 and abs(
                 p[6] - q_f[6]) < 1.0:
+                map_angle.queue.clear()
+                # joint_angle.queue.clear()
                 break
 
-            if j == len(t_array):
-                t = tf
+            if j >= len(t_array_pos):
+                # joint_angle.queue.clear()
+                t_pos = tf_pos
             else:
-                t = t_array[j]
+                t_pos = t_array_pos[j]
+
+            if k >= len(t_array_shadow):
+                map_angle.queue.clear()
+                t_shadow = tf_shadow
+            else:
+                t_shadow = t_array_shadow[k]
 
             a0 = q_i
             a1 = q_dot_i
@@ -58,6 +78,14 @@ def playRobot(arm, mapangle, joint_angle, weight):
             a5 = []
 
             for i in range(0, 7):
+
+                if i == 4 or i == 5:
+                    tf = tf_shadow
+                    t = t_shadow
+                else:
+                    tf = tf_pos
+                    t = t_pos
+
                 a2.append(0.5 * q_dotdot_i[i])
                 a3.append(1.0 / (2.0 * tf ** 3.0) * (
                         20.0 * (q_f[i] - q_i[i]) - (8.0 * q_dot_f[i] + 12.0 * q_dot_i[i]) * tf - (
@@ -82,17 +110,20 @@ def playRobot(arm, mapangle, joint_angle, weight):
 
             time.sleep(sleep)
             j += 1
+            k += 1
+
 
 def setup():
     for a in arms:
         a.set_simulation_robot(on_off=False)
-        a.motion_enable(enable=True)
+        # a.motion_enable(enable=True)
         a.clean_warn()
         a.clean_error()
         a.set_mode(0)
         a.set_state(0)
         a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5,
                           is_radian=False)
+
 
 def parse_name_map(xml_node_list):
     name_map = {}
@@ -105,7 +136,8 @@ def parse_name_map(xml_node_list):
 
     return name_map
 
-def data_handler(mapangle_list, ):
+
+def data_handler(mapangle_ques,):
     client = MotionSDK.Client(host, PortConfigurable)
     print("Connected to %s:%d" % (host, PortConfigurable))
 
@@ -174,12 +206,12 @@ def data_handler(mapangle_list, ):
             offset0 = rotation[0]
             offset1 = rotation[1]
 
-        mapangle0 = np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-50, 50])
-        mapangle1 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-30, 30])
+        mapangle0 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-50, 50])
+        mapangle1 = np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-70, 70])
 
         if counter > 500:
-            for i in range(len(mapangle_list)):
-                mapangle_list[i].put({
+            for que in mapangle_ques:
+                que.put({
                     'j5': mapangle0,
                     'j6': mapangle1,
                 })
@@ -187,15 +219,18 @@ def data_handler(mapangle_list, ):
         counter += 1
         num_frames += 1
 
+
 def findDistance(origin, newpoint):
     distance = ((((newpoint[0] - origin[0]) ** 2) + ((newpoint[1] - origin[1]) ** 2)) ** 0.5)
     return distance
+
 
 def findDistances(pos, nodes):
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
     distances = np.sqrt(dist_2)
     return distances
+
 
 def findAngle(pos, arm_pos):
     (x, y) = pos
@@ -222,7 +257,9 @@ def findAngle(pos, arm_pos):
 
     return angle
 
+
 def findPositionAngle(pos, graph):
+    # print(pos)
     lst = []
     for i in range(len(graph)):
         angle = findAngle(pos, graph[i])
@@ -230,11 +267,14 @@ def findPositionAngle(pos, graph):
         # print(f"arm: {i+1}, coordinate {graph[i]}, relative angle: {angle}")
     return lst
 
+
+
 def closest_arm(pos, nodes):
     # nodes = np.asarray(nodes)
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
     return np.argmin(dist_2)
+
 
 def findWeights(originbot, otherbots):
     randomizedWeights = []
@@ -256,12 +296,26 @@ def findWeights(originbot, otherbots):
 
     return randomizedWeights
 
-def getPosition(pos_que,):
-    print("Enter dancer coordinates (floating number)")
-    x = float(input("X: "))
-    y = float(input("Y: "))
-    pos = [x, y]
-    pos_que.put(pos)
+
+def getPosition(pos_que, ):
+    while True:
+        while True:
+            try:
+                x = float(input("X:"))
+                break
+            except ValueError:
+                continue
+
+        while True:
+            try:
+                y = float(input("Y:"))
+                break
+            except ValueError:
+                continue
+
+        pos = [x, y]
+        pos_que.put(pos)
+
 
 def updateWeights(pos_que, w_list, j_list, graph):
     while True:
@@ -278,20 +332,20 @@ def updateWeights(pos_que, w_list, j_list, graph):
 
 
 if __name__ == "__main__":
-    from libraries.xarm.wrapper import XArmAPI
+    from xarm.wrapper import XArmAPI
 
     ROBOT = "xArms"
     PORT = 5004
 
-    arm1 = XArmAPI('192.168.1.236')
+    arm1 = XArmAPI('192.168.1.203')
     arm2 = XArmAPI('192.168.1.242')
-    arm3 = XArmAPI('192.168.1.203')
-    arm4 = XArmAPI('192.168.1.215')
+    arm3 = XArmAPI('192.168.1.236')
+    arm4 = XArmAPI('192.168.1.244')
     arm5 = XArmAPI('192.168.1.234')
-    arm6 = XArmAPI('192.168.1.244')
-    arm7 = XArmAPI('192.168.1.211')
+    arm6 = XArmAPI('192.168.1.215')
+    arm7 = XArmAPI('192.168.1.208')
     arm8 = XArmAPI('192.168.1.226')
-    arm9 = XArmAPI('192.168.1.208')
+    arm9 = XArmAPI('192.168.1.211')
 
     arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
     totalArms = len(arms)
@@ -304,28 +358,29 @@ if __name__ == "__main__":
         a.set_mode(1)
         a.set_state(0)
 
-    graph = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
+    graph = np.array(
+        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
 
     pos_que = queue.Queue()
-    mapangle_list = []
+    mapangle_ques = []
     j_list = []
     w_list = []
 
     for i in range(len(graph)):
-        mapangle_list.append(queue.Queue)
-        j_list.append(queue.Queue)
-        w_list.append(queue.Queue)
+        mapangle_ques.append(queue.Queue())
+        j_list.append(queue.Queue())
+        w_list.append(queue.Queue())
 
     t_position = Thread(target=getPosition, args=(pos_que,))
     t_update = Thread(target=updateWeights, args=(pos_que, w_list, j_list, graph,))
-    t_mocap = Thread(target=data_handler, args=(mapangle_list,))
+    t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
     for i in range(len(graph)):
-        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_list[i], j_list[i], w_list[i])))
-
+        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], j_list[i], w_list[i])))
 
     t_position.start()
     t_update.start()
     t_mocap.start()
     for i in range(len(graph)):
         t_arms[i].start()
+    # t_arms[1].start()
