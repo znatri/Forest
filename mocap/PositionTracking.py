@@ -117,7 +117,7 @@ def findPositionAngle(pos, graph):
 def setup():
     for a in arms:
         a.set_simulation_robot(on_off=False)
-        # a.motion_enable(enable=True)
+        a.motion_enable(enable=True)
         a.clean_warn()
         a.clean_error()
         a.set_mode(0)
@@ -180,6 +180,7 @@ if __name__ == "__main__":
         for i in range(len(graph)):
             curr = arms[i].angles[2]
             pos_que[i].put([0, 0, j6[i], 90, 0, 0, 0])
+        print(j6[0])
 
 
 

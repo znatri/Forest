@@ -158,6 +158,8 @@ def data_handler(mapangle_ques,):
 
     counter = 0
 
+    mapangles = [[], []]
+
     while True:
         data = client.readData()
 
@@ -206,15 +208,31 @@ def data_handler(mapangle_ques,):
             offset0 = rotation[0]
             offset1 = rotation[1]
 
-        mapangle0 = np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-50, 50])
-        mapangle1 = np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-70, 70])
+        mapangles[0].append(np.interp(math.degrees(rotation[1] - offset1), [-15, 15], [-50, 50]))
+        mapangles[1].append(np.interp(math.degrees(rotation[0] - offset0), [-15, 15], [-70, 70]))
 
-        if counter > 500:
+        windows = [mapangles[0], mapangles[1]]
+
+        if counter >= 2500:
+            j = []
+            for joint in range(len(windows)):
+                windows[joint] = windows[joint][-30:]
+                j.append(np.mean(windows[joint]))
+
+            # print(f'{j[0]}, {j[1]}')
+
             for que in mapangle_ques:
                 que.put({
-                    'j5': mapangle0,
-                    'j6': mapangle1,
+                    'j5': j[0],
+                    'j6': j[1],
                 })
+
+        # if counter > 500:
+        #     for que in mapangle_ques:
+        #         que.put({
+        #             'j5': mapangle0,
+        #             'j6': mapangle1,
+        #         })
 
         counter += 1
         num_frames += 1
@@ -383,4 +401,3 @@ if __name__ == "__main__":
     t_mocap.start()
     for i in range(len(graph)):
         t_arms[i].start()
-    # t_arms[1].start()
