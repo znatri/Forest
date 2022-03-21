@@ -204,3 +204,6 @@ Temporary Items
 /mocap/xarm/
 /libraries/__init__.py
 /git.txt
+
+mocap/__pycache__/
+
