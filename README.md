@@ -7,9 +7,13 @@ This is a repository for Motion Capture and Music MIDI Generation which is part 
 
 ## Summary
 
-### MIDI Generation
+### MIDI Interpretation
 
 Robots come alive to music, interacting and playing with live musicians. The robots listen and respond to melody, rhythm and harmony of the performers and sing/dance along with them. The tech involves real-time pitch and beat detection that trigger different movements and sounds.
+
+### Live Trajectory Generation
+
+### Motion Capture
 
 #### Contributors and Collaborators
 * Hardik Goel
