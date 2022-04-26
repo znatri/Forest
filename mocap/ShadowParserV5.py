@@ -7,11 +7,11 @@ import MotionSDK
 import math
 import random
 import time
+import socket
 
 host = ""
 PortConfigurable = 32076
 frames = 0
-
 
 def playRobot(arm, map_angle : queue.Queue, joint_angle : queue.Queue, weight_que: queue.Queue):
     tf_pos = 50
@@ -334,6 +334,28 @@ def getPosition(pos_que, ):
         pos = [x, y]
         pos_que.put(pos)
 
+def getDancerPos(pos_que, ):
+    MAX_UDP_IP = "127.0.0.1"
+    MAX_UDP_PORT = 7983
+
+    s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    s.bind((MAX_UDP_IP, MAX_UDP_PORT))
+    s.settimeout(None)
+
+    try:
+        while True:
+            data, server = s.recvfrom(1024)
+            coord = bytes.decode(data)
+            pos = [coord[0], coord[1]]
+            pos_que.put(pos)
+            # print(coord[0], coord[1])
+    except KeyboardInterrupt or socket.error:
+        s.close()
+    finally:
+        s.close()
+        print("Socket closed")
+
+
 
 def updateWeights(pos_que, w_list, j_list, graph):
     while True:
@@ -350,7 +372,7 @@ def updateWeights(pos_que, w_list, j_list, graph):
 
 
 if __name__ == "__main__":
-    from xarm.wrapper import XArmAPI
+    from libraries.xarm.wrapper import XArmAPI
 
     ROBOT = "xArms"
     PORT = 5004
@@ -363,9 +385,10 @@ if __name__ == "__main__":
     arm6 = XArmAPI('192.168.1.215')
     arm7 = XArmAPI('192.168.1.208')
     arm8 = XArmAPI('192.168.1.226')
-    arm9 = XArmAPI('192.168.1.211')
+    # arm9 = XArmAPI('192.168.1.211')
 
-    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
+    # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
+    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8]
     totalArms = len(arms)
 
     setup()
@@ -393,11 +416,11 @@ if __name__ == "__main__":
     t_update = Thread(target=updateWeights, args=(pos_que, w_list, j_list, graph,))
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
-    for i in range(len(graph)):
+    for i in range(totalArms):
         t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], j_list[i], w_list[i])))
 
     t_position.start()
     t_update.start()
     t_mocap.start()
-    for i in range(len(graph)):
+    for i in range(totalArms):
         t_arms[i].start()
