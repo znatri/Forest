@@ -136,7 +136,7 @@ def parse_name_map(xml_node_list):
 
     return name_map
 
-
+# MOCAP Data handle
 def data_handler(mapangle_ques,):
     client = MotionSDK.Client(host, PortConfigurable)
     print("Connected to %s:%d" % (host, PortConfigurable))
@@ -275,7 +275,7 @@ def findAngle(pos, arm_pos):
 
     return angle
 
-
+# Angle for robot to face dancer
 def findPositionAngle(pos, graph):
     # print(pos)
     lst = []
@@ -285,15 +285,16 @@ def findPositionAngle(pos, graph):
         # print(f"arm: {i+1}, coordinate {graph[i]}, relative angle: {angle}")
     return lst
 
-
-
+# Finds the closest arm
 def closest_arm(pos, nodes):
     # nodes = np.asarray(nodes)
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
+    retVal = np.argmin(dist_2)
+    print(retVal)
     return np.argmin(dist_2)
 
-
+# Calculates weight for an arm
 def findWeights(originbot, otherbots):
     randomizedWeights = []
 
@@ -302,7 +303,7 @@ def findWeights(originbot, otherbots):
     max = np.max(distances)
     min = np.min(distances)
 
-    print(f"Max: {max}, Min: {min}")
+    # print(f"Max: {max}, Min: {min}")
 
     weights = np.interp(distances, [min, max], [1, 0.25])
 
@@ -314,26 +315,27 @@ def findWeights(originbot, otherbots):
 
     return randomizedWeights
 
+# Get dancer position from input
+# def getPosition(pos_que, ):
+#     while True:
+#         while True:
+#             try:
+#                 x = float(input("X:"))
+#                 break
+#             except ValueError:
+#                 continue
+#
+#         while True:
+#             try:
+#                 y = float(input("Y:"))
+#                 break
+#             except ValueError:
+#                 continue
+#
+#         pos = [x, y]
+#         pos_que.put(pos)
 
-def getPosition(pos_que, ):
-    while True:
-        while True:
-            try:
-                x = float(input("X:"))
-                break
-            except ValueError:
-                continue
-
-        while True:
-            try:
-                y = float(input("Y:"))
-                break
-            except ValueError:
-                continue
-
-        pos = [x, y]
-        pos_que.put(pos)
-
+# Get dancer position from MAX patch
 def getDancerPos(pos_que, ):
     MAX_UDP_IP = "127.0.0.1"
     MAX_UDP_PORT = 7983
@@ -345,18 +347,17 @@ def getDancerPos(pos_que, ):
     try:
         while True:
             data, server = s.recvfrom(1024)
-            coord = bytes.decode(data)
-            pos = [coord[0], coord[1]]
+            coord = bytes.decode(data).split()
+            pos = [float(coord[0]), float(coord[1])]
             pos_que.put(pos)
-            # print(coord[0], coord[1])
+            # print(float(coord[0]), float(coord[1]))
     except KeyboardInterrupt or socket.error:
         s.close()
     finally:
         s.close()
         print("Socket closed")
 
-
-
+# Updates weights in thread
 def updateWeights(pos_que, w_list, j_list, graph):
     while True:
         pos = pos_que.get()
@@ -372,7 +373,7 @@ def updateWeights(pos_que, w_list, j_list, graph):
 
 
 if __name__ == "__main__":
-    from libraries.xarm.wrapper import XArmAPI
+    from xarm.wrapper import XArmAPI
 
     ROBOT = "xArms"
     PORT = 5004
@@ -383,12 +384,14 @@ if __name__ == "__main__":
     arm4 = XArmAPI('192.168.1.244')
     arm5 = XArmAPI('192.168.1.234')
     arm6 = XArmAPI('192.168.1.215')
-    arm7 = XArmAPI('192.168.1.208')
-    arm8 = XArmAPI('192.168.1.226')
+
+    # arm7 = XArmAPI('192.168.1.208')
+    # arm8 = XArmAPI('192.168.1.226')
     # arm9 = XArmAPI('192.168.1.211')
 
     # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8]
+    arms = [arm1, arm2, arm3, arm4, arm5, arm6]
+    # arms = [1, 2, 3, 4, 5, 6]
     totalArms = len(arms)
 
     setup()
@@ -399,21 +402,26 @@ if __name__ == "__main__":
         a.set_mode(1)
         a.set_state(0)
 
-    graph = np.array(
-        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
+    # graph = np.array( [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
+
+    # graph_posenet = np.array(
+    #     [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
+
+    graph_posenet = np.array([[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0]])
 
     pos_que = queue.Queue()
     mapangle_ques = []
     j_list = []
     w_list = []
 
-    for i in range(len(graph)):
+    for i in range(len(graph_posenet)):
         mapangle_ques.append(queue.Queue())
         j_list.append(queue.Queue())
         w_list.append(queue.Queue())
 
-    t_position = Thread(target=getPosition, args=(pos_que,))
-    t_update = Thread(target=updateWeights, args=(pos_que, w_list, j_list, graph,))
+    # t_position = Thread(target=getPosition, args=(pos_que,))
+    t_position = Thread(target=getDancerPos, args=(pos_que,))
+    t_update = Thread(target=updateWeights, args=(pos_que, w_list, j_list, graph_posenet,))
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
     for i in range(totalArms):
@@ -421,6 +429,6 @@ if __name__ == "__main__":
 
     t_position.start()
     t_update.start()
-    t_mocap.start()
+    # t_mocap.start()
     for i in range(totalArms):
         t_arms[i].start()
