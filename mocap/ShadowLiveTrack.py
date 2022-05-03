@@ -228,7 +228,7 @@ def closest_arm(pos, nodes):
     # nodes = np.asarray(nodes)
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
-    retVal = np.argmin(dist_2)
+    retVal = np.argmin(dist_2) + 1 # +1 to scale value from 0 -> 1
     print(retVal)
     return np.argmin(dist_2)
 
@@ -287,6 +287,17 @@ def updateWeights(pos_que, w_list, graph):
         for i in range(len(graph)):
             w_list[i].put(weights[i])
 
+def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
+    while True:
+        data = map_angle.get()
+
+        if not weight_que.empty():
+            weight = weight_que.get()
+
+        j5 = data.get("j5") * weight
+        j6 = data.get("j6") * weight
+
+        arm.set_servo_angle(angles=[0.0, 0.0, 0.0, 0.0, j5, j6, 0.0], is_radian=False)
 
 if __name__ == "__main__":
     from xarm.wrapper import XArmAPI
@@ -334,11 +345,14 @@ if __name__ == "__main__":
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
 
+    # for i in range(totalArms):
+    #     t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+
     for i in range(totalArms):
-        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+        t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
 
     t_dancer.start()
     t_update.start()
-    # t_mocap.start()
+    t_mocap.start()
     for i in range(totalArms):
         t_arms[i].start()
