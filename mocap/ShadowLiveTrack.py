@@ -212,11 +212,6 @@ def data_handler(mapangle_ques,):
         num_frames += 1
 
 
-def findDistance(origin, newpoint):
-    distance = ((((newpoint[0] - origin[0]) ** 2) + ((newpoint[1] - origin[1]) ** 2)) ** 0.5)
-    return distance
-
-
 def findDistances(pos, nodes):
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
@@ -229,7 +224,7 @@ def closest_arm(pos, nodes):
     deltas = nodes - pos
     dist_2 = np.einsum('ij,ij->i', deltas, deltas)
     retVal = np.argmin(dist_2)
-    print(retVal)
+    print(retVal + 1)
     return np.argmin(dist_2)
 
 # Calculates weight for an arm
@@ -255,7 +250,7 @@ def findWeights(originbot, otherbots):
 
 # Get dancer position from MAX patch
 def getDancerPos(pos_que, ):
-    MAX_UDP_IP = "127.0.0.1"
+    MAX_UDP_IP = "10.0.0.18"
     MAX_UDP_PORT = 7983
 
     s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -276,17 +271,29 @@ def getDancerPos(pos_que, ):
         print("Socket closed")
 
 # Updates weights in thread
-def updateWeights(pos_que, w_list, graph):
+def updateWeights(pos_que, w_list, graph, arm_pos):
     while True:
         pos = pos_que.get()
         num = closest_arm(pos, graph)
-        leader = graph[num]
+        leader = arm_pos[num]
 
-        weights = findWeights(leader, graph)
+        weights = findWeights(leader, arm_pos)
+        print(weights)
 
         for i in range(len(graph)):
             w_list[i].put(weights[i])
 
+def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
+    while True:
+        data = map_angle.get()
+
+        if not weight_que.empty():
+            weight = weight_que.get()
+
+        j5 = data.get("j5") * weight
+        j6 = data.get("j6") * weight
+
+        arm.set_servo_angle(angles=[0.0, 0.0, 0.0, 0.0, j5, j6, 0.0], is_radian=False)
 
 if __name__ == "__main__":
     from xarm.wrapper import XArmAPI
@@ -318,6 +325,7 @@ if __name__ == "__main__":
 
     # graph_posenet = np.array(
     #     [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
+    arm_pos = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]])
 
     graph_posenet = np.array([[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0]])
 
@@ -330,15 +338,18 @@ if __name__ == "__main__":
         w_list.append(queue.Queue())
 
     t_dancer = Thread(target=getDancerPos, args=(pos_que,))
-    t_update = Thread(target=updateWeights, args=(pos_que, w_list, graph_posenet,))
+    t_update = Thread(target=updateWeights, args=(pos_que, w_list, graph_posenet, arm_pos,))
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
 
+    # for i in range(totalArms):
+    #     t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+
     for i in range(totalArms):
-        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+        t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
 
     t_dancer.start()
     t_update.start()
     # t_mocap.start()
-    for i in range(totalArms):
-        t_arms[i].start()
+    # for i in range(totalArms):
+    #     t_arms[i].start()
