@@ -31,18 +31,12 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     while True:
         data = map_angle.get()
         weight = weight_que.get()
-
-        if not joint_angle.empty():
-            j4 = joint_angle.get()
-        else:
-            j4 = p[2]
-
-        # j5 = data.get("j5") * weight
-        # j6 = data.get("j6") * weight
-        # j3 = 0
-        j5 = data.get("j5")
-        j6 = data.get("j6")
-        goal = [0, 0, j3, 90, j5, j6, 0]
+        j3 = weight * 90
+        j5 = data.get("j5") * weight
+        j6 = data.get("j6") * weight
+        # j5 = 0
+        # j6 = 0
+        goal = [0, 0, 0, j3, j5, j6, 0]
 
         q_i = p
         q_dot_i = np.zeros(7)
@@ -59,6 +53,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
                     p[3] - q_f[3]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0 and abs(
                 p[6] - q_f[6]) < 1.0:
                 map_angle.queue.clear()
+                weight_que.queue.clear()
                 # joint_angle.queue.clear()
                 break
 
@@ -104,7 +99,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
                 p[i] = (a0[i] + a1[i] * t + a2[i] * t ** 2 + a3[i] * t ** 3 + a4[i] * t ** 4 + a5[i] * t ** 5)
 
             arm.set_servo_angle_j(angles=p, is_radian=False)
-            # print(f"{p} {arm}")
+            print(f"{p} {arm}")
 
             tts = time.time() - start_time
             sleep = t_step - tts
@@ -125,7 +120,7 @@ def setup():
         a.clean_error()
         a.set_mode(0)
         a.set_state(0)
-        a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5,
+        a.set_servo_angle(angle=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5,
                           is_radian=False)
 
 
@@ -301,8 +296,8 @@ def updateWeights(pos_que, w_list, graph, arm_pos):
         # weights = findWeights(leader, arm_pos)
         # print(weights)
         weights = [0, 0, 0, 0, 0, 0]
-        weights[num] = 90
-        #
+        weights[num] = 1
+        # print(weights)
         for i in range(len(graph)):
             w_list[i].put(weights[i])
 
@@ -327,28 +322,28 @@ if __name__ == "__main__":
     ROBOT = "xArms"
     PORT = 5004
     #
-    # arm1 = XArmAPI('192.168.1.203')
-    # arm2 = XArmAPI('192.168.1.242')
-    # arm3 = XArmAPI('192.168.1.236')
-    # arm4 = XArmAPI('192.168.1.244')
-    # arm5 = XArmAPI('192.168.1.234')
-    # arm6 = XArmAPI('192.168.1.215')
+    arm1 = XArmAPI('192.168.1.203')
+    arm2 = XArmAPI('192.168.1.242')
+    arm3 = XArmAPI('192.168.1.237')
+    arm4 = XArmAPI('192.168.1.244')
+    arm5 = XArmAPI('192.168.1.234')
+    arm6 = XArmAPI('192.168.1.215')
     # arm7 = XArmAPI('192.168.1.208')
     # arm8 = XArmAPI('192.168.1.226')
     # arm9 = XArmAPI('192.168.1.211')
 
     # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-    # arms = [arm1, arm2, arm3, arm4, arm5, arm6]
-    arms = [0, 0, 0, 0, 0, 0]
+    arms = [arm1, arm2, arm3, arm4, arm5, arm6]
+    # arms = [0, 0, 0, 0, 0, 0]
     totalArms = len(arms)
 
-    # setup()
-    # repeat = input("do we need to repeat? [y/n]")
-    # if repeat == 'y':
-    #     setup()
-    # for a in arms:
-    #     a.set_mode(1)
-    #     a.set_state(0)
+    setup()
+    repeat = input("do we need to repeat? [y/n]")
+    if repeat == 'y':
+        setup()
+    for a in arms:
+        a.set_mode(1)
+        a.set_state(0)
 
     # graph_posenet = np.array(
     #     [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
@@ -369,15 +364,16 @@ if __name__ == "__main__":
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
 
-    # for i in range(totalArms):
-    #     t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
-
     for i in range(totalArms):
-        t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
+        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+
+    # for i in range(totalArms):
+    #     t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
 
     t_dancer.start()
     t_update.start()
-    # t_mocap.start()
-    # for i in range(totalArms):
-        # t_arms[i].start()
-    t_arms[0].start()
+    t_mocap.start()
+    for i in range(totalArms):
+        t_arms[i].start()
+    # t_arms[0].start()
+    # t_arms[2].start()
