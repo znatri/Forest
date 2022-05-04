@@ -251,6 +251,7 @@ def findWeights(originbot, otherbots):
 # Get dancer position from MAX patch
 def getDancerPos(pos_que, ):
     MAX_UDP_IP = "10.0.0.18"
+    # MAX_UDP_IP = "127.0.0.1"
     MAX_UDP_PORT = 7983
 
     s = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
@@ -285,15 +286,17 @@ def updateWeights(pos_que, w_list, graph, arm_pos):
 
 def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     while True:
-        data = map_angle.get()
+        # data = map_angle.get()
 
-        if not weight_que.empty():
-            weight = weight_que.get()
+        # if not weight_que.empty():
+        weight = weight_que.get()
 
-        j5 = data.get("j5") * weight
-        j6 = data.get("j6") * weight
+        j4 = 90 * weight
+        # j5 = data.get("j5") * weight
+        # j6 = data.get("j6") * weight
 
-        arm.set_servo_angle(angles=[0.0, 0.0, 0.0, 0.0, j5, j6, 0.0], is_radian=False)
+        # print(j4)
+        arm.set_servo_angle(angles=[0.0, 0.0, 0.0, j4, j5, j6, 0.0], is_radian=False)
 
 if __name__ == "__main__":
     from xarm.wrapper import XArmAPI
@@ -313,6 +316,7 @@ if __name__ == "__main__":
 
     # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
     arms = [arm1, arm2, arm3, arm4, arm5, arm6]
+    # arms = [0, 0, 0, 0, 0, 0]
     totalArms = len(arms)
 
     setup()
@@ -352,4 +356,5 @@ if __name__ == "__main__":
     t_update.start()
     # t_mocap.start()
     # for i in range(totalArms):
-    #     t_arms[i].start()
+        # t_arms[i].start()
+    t_arms[0].start()
