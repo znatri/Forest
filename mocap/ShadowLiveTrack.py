@@ -19,7 +19,7 @@ MAX_UDP_PORT = 7983
 
 def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     tf_pos = 25
-    tf_shadow = 5
+    tf_shadow = 1
     t_step = 0.006
     t_array_pos = np.arange(0, tf_pos, t_step)
     t_array_shadow = np.arange(0, tf_shadow, t_step)
@@ -49,16 +49,15 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
         while j < len(t_array_pos) or k < len(t_array_shadow):
             start_time = time.time()
 
-            if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
-                    p[3] - q_f[3]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0 and abs(
-                p[6] - q_f[6]) < 1.0:
+            if abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0:
                 map_angle.queue.clear()
+
+            if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
+                    p[3] - q_f[3]) < 1.0 and abs(p[6] - q_f[6]) < 1.0:
                 weight_que.queue.clear()
-                # joint_angle.queue.clear()
                 break
 
             if j >= len(t_array_pos):
-                # joint_angle.queue.clear()
                 t_pos = tf_pos
             else:
                 t_pos = t_array_pos[j]
@@ -306,14 +305,11 @@ def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
         data = map_angle.get()
         weight = weight_que.get()
 
-        j4 = weight
-        j5 = data.get("j5")
-        j6 = data.get("j6")
+        j4 = weight * 90
+        j5 = data.get("j5") * weight
+        j6 = data.get("j6") * weight
 
         p = [0.0, 0.0, 0.0, j4, j5, j6, 0.0]
-        # print(p)
-        arm.set_servo_angle(servo_id=6, angle=j6, is_radian=False)
-        print(j6)
         arm.set_servo_angle_j(angles=p, is_radian=False)
 
 if __name__ == "__main__":
@@ -332,8 +328,8 @@ if __name__ == "__main__":
     # arm8 = XArmAPI('192.168.1.226')
     # arm9 = XArmAPI('192.168.1.211')
 
-    # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-    arms = [arm1, arm2, arm3, arm4, arm5, arm6]
+    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
+    # arms = [arm1, arm2, arm3, arm4, arm5, arm6]
     # arms = [0, 0, 0, 0, 0, 0]
     totalArms = len(arms)
 
@@ -345,11 +341,11 @@ if __name__ == "__main__":
         a.set_mode(1)
         a.set_state(0)
 
-    # graph_posenet = np.array(
-    #     [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
+    graph_posenet = np.array(
+        [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
 
-    arm_pos = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0]])
-    graph_posenet = np.array([[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0]])
+    arm_pos = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
+    # graph_posenet = np.array([[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0]])
 
     pos_que = queue.Queue()
     mapangle_ques = []
