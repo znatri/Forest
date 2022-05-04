@@ -18,26 +18,31 @@ MAX_UDP_IP = "10.0.0.18"
 MAX_UDP_PORT = 7983
 
 def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
-    tf = 1
+    tf_pos = 25
+    tf_shadow = 5
     t_step = 0.006
-    t_array = np.arange(0, tf, t_step)
+    t_array_pos = np.arange(0, tf_pos, t_step)
+    t_array_shadow = np.arange(0, tf_shadow, t_step)
 
     q_dot_f = np.zeros(7)
     q_dotdot_f = np.zeros(7)
-    p = [0, 0, 0, 90, 0, 0, 0]
+    p = [0, 0, 0, 0, 0, 0, 0]
 
     while True:
         data = map_angle.get()
+        weight = weight_que.get()
 
-        if not weight_que.empty():
-            weight = weight_que.get()
+        if not joint_angle.empty():
+            j4 = joint_angle.get()
+        else:
+            j4 = p[2]
 
-        weight = 1
-
-        j5 = data.get("j5") * weight
-        j6 = data.get("j6") * weight
-
-        goal = [0, 0, 0, 90, j5, j6, 0]
+        # j5 = data.get("j5") * weight
+        # j6 = data.get("j6") * weight
+        # j3 = 0
+        j5 = data.get("j5")
+        j6 = data.get("j6")
+        goal = [0, 0, j3, 90, j5, j6, 0]
 
         q_i = p
         q_dot_i = np.zeros(7)
@@ -45,20 +50,29 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
         q_f = goal
 
         j = 0
+        k = 0
 
-        while j < len(t_array):
+        while j < len(t_array_pos) or k < len(t_array_shadow):
             start_time = time.time()
 
             if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
                     p[3] - q_f[3]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0 and abs(
                 p[6] - q_f[6]) < 1.0:
                 map_angle.queue.clear()
+                # joint_angle.queue.clear()
                 break
 
-            if j == len(t_array):
-                t = tf
+            if j >= len(t_array_pos):
+                # joint_angle.queue.clear()
+                t_pos = tf_pos
             else:
-                t = t_array[j]
+                t_pos = t_array_pos[j]
+
+            if k >= len(t_array_shadow):
+                map_angle.queue.clear()
+                t_shadow = tf_shadow
+            else:
+                t_shadow = t_array_shadow[k]
 
             a0 = q_i
             a1 = q_dot_i
@@ -68,6 +82,14 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
             a5 = []
 
             for i in range(0, 7):
+
+                if i == 4 or i == 5:
+                    tf = tf_shadow
+                    t = t_shadow
+                else:
+                    tf = tf_pos
+                    t = t_pos
+
                 a2.append(0.5 * q_dotdot_i[i])
                 a3.append(1.0 / (2.0 * tf ** 3.0) * (
                         20.0 * (q_f[i] - q_i[i]) - (8.0 * q_dot_f[i] + 12.0 * q_dot_i[i]) * tf - (
@@ -82,7 +104,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
                 p[i] = (a0[i] + a1[i] * t + a2[i] * t ** 2 + a3[i] * t ** 3 + a4[i] * t ** 4 + a5[i] * t ** 5)
 
             arm.set_servo_angle_j(angles=p, is_radian=False)
-            print(f"{p} {arm}")
+            # print(f"{p} {arm}")
 
             tts = time.time() - start_time
             sleep = t_step - tts
@@ -92,6 +114,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
 
             time.sleep(sleep)
             j += 1
+            k += 1
 
 
 def setup():
@@ -241,9 +264,10 @@ def findWeights(originbot, otherbots):
     weights = np.interp(distances, [min, max], [1, 0.25])
 
     for i in weights:
-        w1 = int(100 * (i - 0.2))
-        w2 = int(100 * (i + 0.2))
-
+        # w1 = int(100 * (i - 0.2))
+        # w2 = int(100 * (i + 0.2))
+        w1 = int(100 * i)
+        w2 = int(100 * i)
         randomizedWeights.append(abs(random.randint(w1, w2) / 100))
 
     return randomizedWeights
@@ -274,24 +298,26 @@ def updateWeights(pos_que, w_list, graph, arm_pos):
         num = closest_arm(pos, graph)
         leader = arm_pos[num]
 
-        weights = findWeights(leader, arm_pos)
+        # weights = findWeights(leader, arm_pos)
         # print(weights)
-
+        weights = [0, 0, 0, 0, 0, 0]
+        weights[num] = 90
+        #
         for i in range(len(graph)):
             w_list[i].put(weights[i])
 
 def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     while True:
         data = map_angle.get()
-        # weight = weight_que.get()
+        weight = weight_que.get()
 
-        # j4 = float(90.0 * weight)
+        j4 = weight
         j5 = data.get("j5")
         j6 = data.get("j6")
 
-        p = [0.0, 0.0, 0.0, 90.0, j5, j6, 0.0]
+        p = [0.0, 0.0, 0.0, j4, j5, j6, 0.0]
         # print(p)
-        # arm.set_servo_angle(servo_id=6, angle=j6, is_radian=False)
+        arm.set_servo_angle(servo_id=6, angle=j6, is_radian=False)
         print(j6)
         arm.set_servo_angle_j(angles=p, is_radian=False)
 
@@ -300,29 +326,29 @@ if __name__ == "__main__":
 
     ROBOT = "xArms"
     PORT = 5004
-
-    arm1 = XArmAPI('192.168.1.203')
-    arm2 = XArmAPI('192.168.1.242')
-    arm3 = XArmAPI('192.168.1.236')
-    arm4 = XArmAPI('192.168.1.244')
-    arm5 = XArmAPI('192.168.1.234')
-    arm6 = XArmAPI('192.168.1.215')
+    #
+    # arm1 = XArmAPI('192.168.1.203')
+    # arm2 = XArmAPI('192.168.1.242')
+    # arm3 = XArmAPI('192.168.1.236')
+    # arm4 = XArmAPI('192.168.1.244')
+    # arm5 = XArmAPI('192.168.1.234')
+    # arm6 = XArmAPI('192.168.1.215')
     # arm7 = XArmAPI('192.168.1.208')
     # arm8 = XArmAPI('192.168.1.226')
     # arm9 = XArmAPI('192.168.1.211')
 
     # arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-    arms = [arm1, arm2, arm3, arm4, arm5, arm6]
-    # arms = [0, 0, 0, 0, 0, 0]
+    # arms = [arm1, arm2, arm3, arm4, arm5, arm6]
+    arms = [0, 0, 0, 0, 0, 0]
     totalArms = len(arms)
 
-    setup()
-    repeat = input("do we need to repeat? [y/n]")
-    if repeat == 'y':
-        setup()
-    for a in arms:
-        a.set_mode(1)
-        a.set_state(0)
+    # setup()
+    # repeat = input("do we need to repeat? [y/n]")
+    # if repeat == 'y':
+    #     setup()
+    # for a in arms:
+    #     a.set_mode(1)
+    #     a.set_state(0)
 
     # graph_posenet = np.array(
     #     [[1050.0, 380.0], [710.0, 252.0], [410.0, 115.0], [1180.0, 290.0], [900.0, 200.0], [630.0, 100.0], [1275.0, 250.0], [1010.0, 175.0], [810.0, 85.0]])
@@ -349,9 +375,9 @@ if __name__ == "__main__":
     for i in range(totalArms):
         t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
 
-    # t_dancer.start()
-    # t_update.start()
-    t_mocap.start()
+    t_dancer.start()
+    t_update.start()
+    # t_mocap.start()
     # for i in range(totalArms):
         # t_arms[i].start()
     t_arms[0].start()
