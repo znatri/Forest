@@ -17,6 +17,61 @@ MAX_UDP_IP = "10.0.0.18"
 # MAX_UDP_IP = "127.0.0.1"
 MAX_UDP_PORT = 7983
 
+def liveTraj(arm, j4):
+    tf = 25
+    t_step = 0.006
+    t_array = np.arrange(0, tf, t_step)
+
+    q_dot_f = np.zeros(7)
+    q_dotdot_f = np.zeros(7)
+
+    p = arm.last_used_angles()
+
+    goal = p
+    goal[3] = j4
+
+    q_i = p
+    q_dot_i = np.zeros(7)
+    q_dotdot_i = np.zeros(7)
+    q_f = goal
+
+    i = 0
+
+    while i < len(t_array):
+
+        if i == len(t_array):
+            t = tf
+        else:
+            t = t_array[i]
+
+        if abs(p - q_f) < 1.0:
+            break
+
+        a0 = q_i
+        a1 = q_dot_i
+        a2 = 0.5 * q_dotdot_i
+        a3 = 1.0 / (2.0 * tf ** 3.0) * (20.0 * (q_f - q_i) - (8.0 * q_dot_f + 12.0 * q_dot_i) * tf - (
+                    3.0 * q_dotdot_f - q_dotdot_i) * tf ** 2.0)
+        a4 = 1.0 / (2.0 * tf ** 4.0) * (30.0 * (q_i - q_f) + (14.0 * q_dot_f + 16.0 * q_dot_i) * tf + (
+                    3.0 * q_dotdot_f - 2.0 * q_dotdot_i) * tf ** 2.0)
+        a5 = 1.0 / (2.0 * tf ** 5.0) * (12.0 * (q_f - q_i) - (6.0 * q_dot_f + 6.0 * q_dot_i) * tf - (
+                    q_dotdot_f - q_dotdot_i) * tf ** 2.0)
+
+        p = a0 + a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5
+
+        j = arm.last_used_angles()
+        j[3] = p
+
+        arm6.set_servo_angle_j(angles=j, is_radian=False)
+        tts = time.time() - start_time
+        sleep = 0.006 - tts
+
+        if tts > 0.006:
+            sleep = 0
+
+        time.sleep(sleep)
+        i += 1
+
 def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     tf_pos = 25
     tf_shadow = 1
@@ -48,9 +103,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
 
         while j < len(t_array_pos) or k < len(t_array_shadow):
             start_time = time.time()
-
-            if abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(
-                    p[3] - q_f[3]) < 1.0 and abs(p[6] - q_f[6]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0:
+            if (abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(p[3] - q_f[3]) < 1.0 and abs(p[6] - q_f[6]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0):
                 weight_que.queue.clear()
                 map_angle.queue.clear()
                 break
@@ -308,7 +361,10 @@ def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
         j5 = data.get("j5") * weight
         j6 = data.get("j6") * weight
 
-        p = [0.0, 0.0, 0.0, j4, j5, j6, 0.0]
+        livetraj(angle, j4)
+
+        p = [0.0, 0.0, 0.0, j5, j6, 0.0]
+        p[3] = arm.last_used_angle[3]
         arm.set_servo_angle_j(angles=p, is_radian=False)
 
 if __name__ == "__main__":
