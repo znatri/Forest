@@ -1,13 +1,14 @@
-from xml.etree.ElementTree import XML
-import sys
-from threading import Thread
-import queue
-import numpy as np
-import MotionSDK
 import math
+import queue
 import random
-import time
 import socket
+import time
+from threading import Thread
+from xml.etree.ElementTree import XML
+
+import numpy as np
+
+import MotionSDK
 
 host = ""
 PortConfigurable = 32076
@@ -17,28 +18,25 @@ MAX_UDP_IP = "10.0.0.18"
 # MAX_UDP_IP = "127.0.0.1"
 MAX_UDP_PORT = 7983
 
-def liveTraj(arm, j4):
-    tf = 25
+def liveTraj(arm, goal):
+    tf = 10
     t_step = 0.006
-    t_array = np.arrange(0, tf, t_step)
+    t_array = np.arange(0, tf, t_step)
 
-    q_dot_f = np.zeros(7)
-    q_dotdot_f = np.zeros(7)
+    q_dot_f = 0
+    q_dotdot_f = 0
 
-    p = arm.last_used_angles()
-
-    goal = p
-    goal[3] = j4
+    p = 0
 
     q_i = p
-    q_dot_i = np.zeros(7)
-    q_dotdot_i = np.zeros(7)
+    q_dot_i = 0
+    q_dotdot_i = 0
     q_f = goal
 
     i = 0
 
     while i < len(t_array):
-
+        start_time = time.time()
         if i == len(t_array):
             t = tf
         else:
@@ -59,10 +57,10 @@ def liveTraj(arm, j4):
 
         p = a0 + a1 * t + a2 * t ** 2 + a3 * t ** 3 + a4 * t ** 4 + a5 * t ** 5
 
-        j = arm.last_used_angles()
+        j = arm.last_used_angles
         j[3] = p
-
-        arm6.set_servo_angle_j(angles=j, is_radian=False)
+        print(j)
+        arm.set_servo_angle_j(angles=j, is_radian=False)
         tts = time.time() - start_time
         sleep = 0.006 - tts
 
@@ -74,7 +72,7 @@ def liveTraj(arm, j4):
 
 def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     tf_pos = 25
-    tf_shadow = 1
+    tf_shadow = 5
     t_step = 0.006
     t_array_pos = np.arange(0, tf_pos, t_step)
     t_array_shadow = np.arange(0, tf_shadow, t_step)
@@ -86,9 +84,9 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     while True:
         data = map_angle.get()
         weight = weight_que.get()
-        j3 = weight * 90
-        j5 = data.get("j5") * weight
-        j6 = data.get("j6") * weight
+        j3 = weight[1] * 90
+        j5 = data.get("j5") * weight[1]
+        j6 = data.get("j6") * weight[1]
         # j5 = 0
         # j6 = 0
         goal = [0, 0, 0, j3, j5, j6, 0]
@@ -105,7 +103,7 @@ def playRobot(arm, map_angle : queue.Queue, weight_que: queue.Queue):
             start_time = time.time()
             if (abs(p[0] - q_f[0]) < 1.0 and abs(p[1] - q_f[1]) < 1.0 and abs(p[2] - q_f[2]) < 1.0 and abs(p[3] - q_f[3]) < 1.0 and abs(p[6] - q_f[6]) < 1.0 and abs(p[4] - q_f[4]) < 1.0 and abs(p[5] - q_f[5]) < 1.0):
                 weight_que.queue.clear()
-                map_angle.queue.clear()
+                map_angle.  queue.clear()
                 break
 
             if j >= len(t_array_pos):
@@ -263,7 +261,7 @@ def data_handler(mapangle_ques,):
 
         windows = [mapangles[0], mapangles[1]]
 
-        if counter >= 500:
+        if counter >= 1000:
             j = []
             for joint in range(len(windows)):
                 windows[joint] = windows[joint][-30:]
@@ -344,13 +342,13 @@ def updateWeights(pos_que, w_list, graph, arm_pos):
         num = closest_arm(pos, graph)
         leader = arm_pos[num]
 
-        # weights = findWeights(leader, arm_pos)
+        weights = findWeights(leader, arm_pos)
         # print(weights)
-        weights = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        weights[num] = 1
+        leaders = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+        leaders[num] = 1
         # print(weights)
         for i in range(len(graph)):
-            w_list[i].put(weights[i])
+            w_list[i].put([weights[i], leaders[i]])
 
 def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
     while True:
@@ -358,13 +356,15 @@ def playArm(arm, map_angle : queue.Queue, weight_que: queue.Queue):
         weight = weight_que.get()
 
         j4 = weight * 90
-        j5 = data.get("j5") * weight
-        j6 = data.get("j6") * weight
+        j5 = data.get("j5")
+        j6 = data.get("j6")
 
-        livetraj(angle, j4)
 
-        p = [0.0, 0.0, 0.0, j5, j6, 0.0]
-        p[3] = arm.last_used_angle[3]
+        # liveTraj(arm, j4)
+        # weight_que.queue.clear()
+
+        p = [0.0, 0.0, 0.0, 90.0, j5, j6, 0.0]
+        # p[3] = arm.last_used_angles[3]
         arm.set_servo_angle_j(angles=p, is_radian=False)
 
 if __name__ == "__main__":
@@ -416,11 +416,11 @@ if __name__ == "__main__":
     t_mocap = Thread(target=data_handler, args=(mapangle_ques,))
     t_arms = []
 
-    # for i in range(totalArms):
-    #     t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
-
     for i in range(totalArms):
-        t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
+        t_arms.append(Thread(target=playRobot, args=(arms[i], mapangle_ques[i], w_list[i])))
+
+    # for i in range(totalArms):
+    #     t_arms.append(Thread(target=playArm, args=(arms[i], mapangle_ques[i], w_list[i])))
 
     t_dancer.start()
     t_update.start()
@@ -428,10 +428,10 @@ if __name__ == "__main__":
     # for i in range(totalArms):
     #     t_arms[i].start()
     t_arms[0].start()
-    # t_arms[2].start()
-    # t_arms[3].start()
-    # t_arms[4].start()
-    # t_arms[5].start()
-    # t_arms[6].start()
-    # t_arms[7].start()
-    # t_arms[8].start()
+    t_arms[2].start()
+    t_arms[3].start()
+    t_arms[4].start()
+    t_arms[5].start()
+    t_arms[6].start()
+    t_arms[7].start()
+    t_arms[8].start()
