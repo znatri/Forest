@@ -116,13 +116,14 @@ def findPositionAngle(pos, graph):
 
 def setup():
     for a in arms:
-        a.set_simulation_robot(on_off=False)
-        a.motion_enable(enable=True)
-        a.clean_warn()
-        a.clean_error()
-        a.set_mode(0)
-        a.set_state(0)
-        a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5, is_radian=False)
+        if a != 0:
+            a.set_simulation_robot(on_off=False)
+            a.motion_enable(enable=True)
+            a.clean_warn()
+            a.clean_error()
+            a.set_mode(0)
+            a.set_state(0)
+            a.set_servo_angle(angle=[0.0, 0.0, 0.0, 90, 0.0, 0.0, 0.0], wait=False, speed=20, acceleration=5, is_radian=False)
 
 if __name__ == "__main__":
 
@@ -132,17 +133,16 @@ if __name__ == "__main__":
     PORT = 5004
 
     arm1 = XArmAPI('192.168.1.203')
-    arm2 = XArmAPI('192.168.1.242')
-    arm3 = XArmAPI('192.168.1.236')
+    # arm2 = XArmAPI('192.168.1.242')
+    arm3 = XArmAPI('192.168.1.237')
     arm4 = XArmAPI('192.168.1.244')
     arm5 = XArmAPI('192.168.1.234')
     arm6 = XArmAPI('192.168.1.215')
     arm7 = XArmAPI('192.168.1.208')
-    arm8 = XArmAPI('192.168.1.226')
+    arm8 = XArmAPI('192.168.1.236')
     arm9 = XArmAPI('192.168.1.211')
 
-    arms = [arm1, arm2, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
-
+    arms = [arm1, 0, arm3, arm4, arm5, arm6, arm7, arm8, arm9]
     totalArms = len(arms)
 
     setup()
@@ -151,8 +151,9 @@ if __name__ == "__main__":
     if repeat == 'y':
         setup()
     for a in arms:
-        a.set_mode(1)
-        a.set_state(0)
+        if a != 0:
+            a.set_mode(1)
+            a.set_state(0)
 
     graph = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [0.0, 1.0], [1.0, 1.0], [2.0, 1.0], [0.0, 2.0], [1.0, 2.0], [2.0, 2.0]])
 
@@ -168,8 +169,18 @@ if __name__ == "__main__":
 
     deltas = []
 
-    for i in range(len(graph)):
-        t_arms[i].start()
+    # for i in range(len(graph)):
+    #     if i != 1:
+    #         t_arms[i].start()
+
+    t_arms[0].start()
+    t_arms[2].start()
+    t_arms[3].start()
+    t_arms[4].start()
+    t_arms[5].start()
+    t_arms[6].start()
+    t_arms[7].start()
+    t_arms[8].start()
 
     while True:
         print("Enter coordinates (floating number)")
@@ -178,7 +189,7 @@ if __name__ == "__main__":
         dancer_pos = [x, y]
         j6 = findPositionAngle(dancer_pos, graph)
         for i in range(len(graph)):
-            curr = arms[i].angles[2]
+            # curr = arms[i].angles[2]
             pos_que[i].put([0, 0, j6[i], 90, 0, 0, 0])
         print(j6[0])
 
